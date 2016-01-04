@@ -1,0 +1,4 @@
+.tox/
+.testrepository/
+ekko.egg-info/
+*.pyc
