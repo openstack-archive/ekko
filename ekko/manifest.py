@@ -19,9 +19,12 @@
 from binascii import crc32
 from collections import namedtuple
 from datetime import datetime
+import os
+import sqlite3
 from struct import pack
 from struct import unpack
 from uuid import UUID
+import time
 
 import six
 
@@ -52,54 +55,57 @@ class Manifest(object):
     def __init__(self, manifest):
         self.manifest = manifest
         self.metadata = {'version': 0}
+        self.conn = sqlite3.connect(manifest)
+        self.cur = self.conn.cursor()
 
     def write_manifest(self):
-        with open(self.manifest, 'wb') as f:
-            self.write_header(f)
-            self.write_body(f)
+        print "START"
+        start = time.time()
+        self.write_header()
+        print "{} HEADER WRITTEN".format(time.time() - start)
+        self.write_body()
+        self.conn.commit()
+        self.conn.close()
+        print "{} BODY WRITTEN".format(time.time() - start)
+        print "FILE SIZE {}".format(os.path.getsize(self.manifest))
 
-    def build_header(self):
-        data = pack(
-            '<i2IQH14s',
-            utctimestamp(),
-            self.metadata['info'].incremental,
-            self.metadata['info'].segment_size,
-            self.metadata['info'].sectors,
-            len(self.metadata['bases']),
-            str.encode('\0\0' * 14)
+    def write_body(self):
+        self.cur.execute(
+            ("CREATE TABLE objects "
+             "(block_id INTEGER PRIMARY KEY NOT NULL, "
+             "backup_id INTEGER, "
+             "base_id INTEGER, "
+             "seg_hash BLOB, "
+             "FOREIGN KEY(base_id) REFERENCES bases(id));")
         )
-
-        checksum = crc32(data)
-
-        for i in self.metadata['bases']:
-            data += i
-            checksum = crc32(i, checksum)
-
-        return data, checksum
-
-    def write_body(self, f):
-        checksum = 0
-
-        for k, v in six.iteritems(self.segments):
-            data = pack(
-                '<IHI2B20s',
-                k,
-                v.base,
-                v.incremental,
-                v.compression,
-                v.encryption,
-                self.hashes[k]
-            )
-
-            f.write(data)
-            checksum = crc32(data, checksum)
+        self.cur.executemany("INSERT INTO objects (block_id, backup_id, base_id, seg_hash) VALUES (?, ?, ?, ?)", self.segments)
+            # f.write(data)
 
         # Backfill the body_checksum
-        f.seek(24, 0)
-        f.write(pack('<i', checksum))
+        # f.seek(24, 0)
+        # f.write(pack('<i', checksum))
 
-    def write_header(self, f):
-        data, checksum = self.build_header()
+    def write_header(self):
+        self.cur.execute("CREATE TABLE metadata (key text, value integer);")
+        data = [
+            ('timestamp', utctimestamp()),
+            ('incremental', self.metadata['info'].incremental),
+            ('segment_size', self.metadata['info'].segment_size),
+            ('sectors', self.metadata['info'].sectors),
+        ]
+        for d in data:
+            self.cur.execute(
+                "INSERT INTO metadata VALUES ('{}', {})".format(*d))
+        self.cur.execute(
+            ("CREATE TABLE bases "
+             "(id INTEGER PRIMARY KEY NOT NULL,"
+             "base_uuid TEXT);")
+        )
+        self.bases = {}
+        for base_id, base in enumerate(self.metadata['bases']):
+            self.bases[base] = base_id
+            self.cur.execute(
+                "INSERT INTO bases VALUES ({}, '{}')".format(base_id, base))
 
     def read_data(self, f, size_requested):
         data = f.read(size_requested)

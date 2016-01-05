@@ -19,8 +19,9 @@
 
 import argparse
 from collections import namedtuple
-# from hashlib import sha1
+from hashlib import sha1
 import os
+import random
 import sys
 from uuid import uuid4 as uuid
 
@@ -34,7 +35,7 @@ def parse_args():
     blockdevloc.add_argument('--blockdev', required=False,
                              help='Block device to backup')
     blockdevloc.add_argument('--fakeblockdev', required=False, type=int,
-                              help='Fake a blockdevice (size in GB)')
+                             help='Fake a blockdevice (size in GB)')
     parser.add_argument('--manifest', required=True,
                         help='manifest file')
     parser.add_argument('--cbt', required=False,
@@ -51,13 +52,9 @@ def get_disk_size(device):
 
 
 def read_segments(f, lst, size, backup):
-    backup.segments = dict()
-    backup.hashes = dict()
-    Segment = namedtuple(
-        'Segment',
-        'base incremental compression encryption'
-    )
+    backup.segments = []
 
+    bases = dict([base, base_id] for base_id, base in enumerate(backup.metadata['bases']))
     for segment in lst:
         # Do not actually do the backup
 
@@ -65,16 +62,13 @@ def read_segments(f, lst, size, backup):
         # data = f.read(size)
         # if not data:
         #     raise Exception('Failed to read data')
-
-        backup.segments[segment] = Segment(
-            len(backup.metadata['bases']) - 1,
+        data = str.encode('\0\0' * 20)
+        seg = (
+            segment,
             backup.metadata['info'].incremental,
-            0,
-            0
-        )
-        # backup.hashes[segment] = sha1(data).digest()
-        # Empty sha
-        backup.hashes[segment] = str.encode('\0\0' * 20)
+            bases[random.choice(backup.metadata['bases'])],
+            sha1(data).hexdigest())
+        backup.segments.append(seg)
 
 
 def check_manifest(manifest_file):
@@ -83,9 +77,9 @@ def check_manifest(manifest_file):
 
 def main():
     args = parse_args()
-    segment_size = 4 * 1024**2  # 4MiB
+    segment_size = 4 * 1024 ** 2  # 4MiB
     if args.fakeblockdev:
-        size_of_disk = args.fakeblockdev * 1024**3  # Convert GB to B
+        size_of_disk = args.fakeblockdev * 1024 ** 3  # Convert GB to B
         args.blockdev
     else:
         size_of_disk = get_disk_size(args.blockdev)
@@ -93,7 +87,7 @@ def main():
     num_of_segments = int(size_of_disk / segment_size)
     incremental = 0
 
-    Info = namedtuple(
+    info = namedtuple(
         'Info',
         'timestamp incremental segment_size sectors'
     )
@@ -104,18 +98,23 @@ def main():
 
     backup = manifest.Manifest(args.manifest)
 
-    backup.metadata['info'] = Info(
+    backup.metadata['info'] = info(
         manifest.utctimestamp(),
         incremental,
         segment_size,
         num_of_sectors,
     )
 
-    backup.metadata['bases'] = [uuid().bytes]
+    backup.metadata['bases'] = [str(uuid()) for i in range(3)]
     segments_to_read = six.moves.range(0, num_of_segments - 1)
 
     if args.fakeblockdev:
-        read_segments(args.fakeblockdev, segments_to_read, segment_size, backup)
+        read_segments(
+            args.fakeblockdev,
+            segments_to_read,
+            segment_size,
+            backup,
+        )
 
     # with open(args.blockdev, 'rb+') as f:
     #    read_segments(f, segments_to_read, segment_size, backup)
