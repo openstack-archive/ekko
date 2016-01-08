@@ -2,3 +2,4 @@
 .testrepository/
 ekko.egg-info/
 *.pyc
+*.swp

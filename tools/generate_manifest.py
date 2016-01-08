@@ -18,14 +18,12 @@
 
 
 import argparse
-from collections import namedtuple
-# from hashlib import sha1
 import os
 import sys
-from uuid import uuid4 as uuid
 
 sys.path.insert(0, '/root/ekko/')
-from ekko import manifest
+from ekko.manifest import driver as manifest_driver
+from ekko.manifest import structure as manifest_structure
 from six.moves import range
 
 
@@ -40,24 +38,10 @@ def parse_args():
     return parser.parse_args()
 
 
-def read_segments(segments, size, backup):
-    backup.segments = dict()
-    backup.hashes = dict()
-    Segment = namedtuple(
-        'Segment',
-        'base incremental compression encryption'
-    )
-
+def read_segments(segments, metadata):
     for segment in segments:
-        # Generate manifest info for each object in backup
-        backup.segments[segment] = Segment(
-            len(backup.metadata['bases']) - 1,
-            backup.metadata['info'].incremental,
-            0,
-            0
-        )
-        # Random string simulating hash sha
-        backup.hashes[segment] = os.urandom(20)
+        yield (buffer(metadata.backupset_id), metadata.incremental,
+               segment, 0, 0, buffer(os.urandom(20)))
 
 
 def check_manifest(manifest_file):
@@ -66,35 +50,24 @@ def check_manifest(manifest_file):
 
 def main():
     args = parse_args()
-    segment_size = 4 * 1024**2  # 4MiB
-    size_of_disk = args.backupsize * 1024**3  # Convert GB to B
-    num_of_sectors = int(size_of_disk / 512)
-    num_of_segments = int(size_of_disk / segment_size)
-    incremental = 0
-
-    Info = namedtuple(
-        'Info',
-        'timestamp incremental segment_size sectors'
-    )
-
     if check_manifest(args.manifest):
         print('manifest exists; exiting')
         return
 
-    backup = manifest.Manifest(args.manifest)
+    manifest = manifest_driver.load_manifest_driver(args.manifest)
 
-    backup.metadata['info'] = Info(
-        manifest.utctimestamp(),
-        incremental,
-        segment_size,
-        num_of_sectors,
-    )
+    size_of_disk = args.backupsize * 1024**3  # Convert GB to B
+    num_of_sectors = int(size_of_disk / 512)
+    incremental = 0
+    metadata = manifest_structure.Metadata(incremental, sectors=num_of_sectors)
 
-    backup.metadata['bases'] = [uuid().bytes]
+    manifest.initialize()
+    manifest.put_metadata(metadata)
 
-    read_segments(range(0, num_of_segments - 1), segment_size, backup)
+    num_of_segments = int(size_of_disk / metadata.segment_size)
+    segments = read_segments(range(0, num_of_segments - 1), metadata)
 
-    backup.write_manifest()
+    manifest.put_segments(segments)
 
 if __name__ == '__main__':
     sys.exit(main())
