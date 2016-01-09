@@ -1,0 +1,8 @@
+Code-Review+2: Sam Yaple <sam@yaple.net>
+Workflow+1: Sam Yaple <sam@yaple.net>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Sat, 09 Jan 2016 01:09:35 +0000
+Reviewed-on: https://review.openstack.org/263472
+Project: openstack/ekko
+Branch: refs/heads/master
