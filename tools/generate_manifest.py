@@ -27,6 +27,12 @@ from ekko.manifest import structure as manifest_structure
 from six.moves import range
 
 
+DRIVERS = {
+    'osdk': 'osdk.OSDKDriver',
+    'sqlite': 'sqlite.SQLiteDriver'
+}
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Backup Block Device')
     parser.add_argument('--backupsize', required=True, type=int,
@@ -35,6 +41,8 @@ def parse_args():
                         help='manifest file')
     parser.add_argument('--cbt', required=False,
                         help='change block tracking info')
+    parser.add_argument('--driver', required=False, default='sqlite',
+                        choices=['osdk', 'sqlite'], help='manifest driver')
     return parser.parse_args()
 
 
@@ -60,7 +68,8 @@ def main():
         print('manifest exists; exiting')
         return
 
-    manifest = manifest_driver.load_manifest_driver(args.manifest)
+    manifest = manifest_driver.load_manifest_driver(args.manifest,
+                                                    DRIVERS[args.driver])
 
     size_of_disk = args.backupsize * 1024**3  # Convert GB to B
     num_of_sectors = int(size_of_disk / 512)
