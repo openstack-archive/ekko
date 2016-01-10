@@ -30,13 +30,18 @@ class SQLiteDriver(driver.ManifestDriver):
                         key TEXT PRIMARY KEY,
                         value TEXT
                     );
+                    CREATE TABLE backupsets (
+                        id INTEGER PRIMARY KEY,
+                        backupset_id BLOB
+                    );
                     CREATE TABLE segments (
-                        backupset_id BLOB,
                         incremental INTEGER,
                         segment INTEGER PRIMARY KEY,
                         compression TINYINT,
                         encryption TINYINT,
-                        segment_hash BLOB
+                        segment_hash BLOB,
+                        backupset_id INTEGER,
+                        FOREIGN KEY(backupset_id) REFERENCES backupsets(id)
                     );
                 """)
             conn.commit()
@@ -53,19 +58,19 @@ class SQLiteDriver(driver.ManifestDriver):
         conn.rollback()
         self.conn = conn
 
-    def put_segments(self, segments):
+    def put_segments(self, segments, metadata):
         with self.get_conn() as conn:
             with closing(conn.cursor()) as cur:
                 for segment in segments:
                     cur.execute(
                         "INSERT INTO segments VALUES (?, ?, ?, ?, ?, ?)",
                         (
-                            buffer(segment.backupset_id),
                             segment.incremental,
                             segment.segment,
                             segment.compression,
                             segment.encryption,
-                            buffer(segment.segment_hash)
+                            buffer(segment.segment_hash),
+                            metadata.backupsets.index(segment.backupset_id)
                         )
                     )
             conn.commit()
@@ -82,5 +87,10 @@ class SQLiteDriver(driver.ManifestDriver):
                         ('timestamp', metadata.timestamp)
                     ]
                 )
+                for i, v in enumerate(metadata.backupsets):
+                    cur.execute(
+                        "INSERT INTO backupsets VALUES (?, ?)",
+                        (i, buffer(v))
+                    )
 
             conn.commit()
