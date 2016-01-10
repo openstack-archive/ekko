@@ -18,6 +18,7 @@ from contextlib import contextmanager
 import sqlite3
 
 from ekko.manifest import driver
+from ekko.manifest import structure
 
 
 class SQLiteDriver(driver.ManifestDriver):
@@ -57,6 +58,30 @@ class SQLiteDriver(driver.ManifestDriver):
         yield conn
         conn.rollback()
         self.conn = conn
+
+    def get_metadata(self):
+        with self.get_conn() as conn:
+            with closing(conn.cursor()) as cur:
+                cur.execute("SELECT * FROM metadata")
+                metadata = dict(cur.fetchall())
+                cur.execute("SELECT * FROM backupsets")
+                backupsets = [b[1] for b in cur.fetchall()]
+
+        return structure.Metadata(
+            incremental=metadata['incremental'],
+            sectors=metadata['sectors'],
+            segment_size=metadata['segment_size'],
+            timestamp=metadata['timestamp'],
+            backupset_id=backupsets[-1],
+            backupsets=backupsets
+        )
+
+    def get_segments(self):
+        with self.get_conn() as conn:
+            with closing(conn.cursor()) as cur:
+                cur.execute("SELECT * FROM segments")
+                for result in cur:
+                    yield result
 
     def put_segments(self, segments, metadata):
         with self.get_conn() as conn:

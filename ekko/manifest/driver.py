@@ -34,6 +34,12 @@ class ManifestDriver(object):
         self.conn = None
         self.manifest_file = manifest_file
 
+    def get_metadata(self):
+        raise NotImplementedError()
+
+    def get_segments(self):
+        raise NotImplementedError()
+
     def put_metadata(self, metadata):
         raise NotImplementedError()
 
