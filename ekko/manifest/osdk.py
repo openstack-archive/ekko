@@ -24,17 +24,17 @@ class OSDKDriver(driver.ManifestDriver):
         with open(self.manifest_file, 'wb', 4096) as f:
             f.write(os.urandom(20))
 
-    def put_segments(self, segments):
+    def put_segments(self, segments, metadata):
         with open(self.manifest_file, 'ab', 4096) as f:
             for segment in segments:
                 f.write(pack(
-                    '<16s2I2B20s',
-                    segment.backupset_id,
+                    '<2I2B20sI',
                     segment.incremental,
                     segment.segment,
                     segment.compression,
                     segment.encryption,
-                    segment.segment_hash
+                    segment.segment_hash,
+                    metadata.backupsets.index(segment.backupset_id)
                 ))
 
     def put_metadata(self, metadata):
@@ -45,3 +45,5 @@ class OSDKDriver(driver.ManifestDriver):
                 metadata.segment_size,
                 metadata.sectors
             ))
+            for backupset in metadata.backupsets:
+                f.write(pack('<16s', backupset))
