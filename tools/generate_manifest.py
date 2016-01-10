@@ -82,7 +82,7 @@ def main():
     num_of_segments = int(size_of_disk / metadata.segment_size)
     segments = read_segments(range(0, num_of_segments - 1), metadata)
 
-    manifest.put_segments(segments)
+    manifest.put_segments(segments, metadata)
 
 if __name__ == '__main__':
     sys.exit(main())
