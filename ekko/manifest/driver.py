@@ -37,5 +37,5 @@ class ManifestDriver(object):
     def put_metadata(self, metadata):
         raise NotImplementedError()
 
-    def put_segments(self, segments):
+    def put_segments(self, segments, metadata):
         raise NotImplementedError()
