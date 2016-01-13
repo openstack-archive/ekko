@@ -20,10 +20,10 @@
 import os
 from struct import pack
 
-from ekko.manifest import driver
+from ekko.manifest import drivers
 
 
-class OSDKDriver(driver.ManifestDriver):
+class OSDKManifest(drivers.BaseManifest):
 
     def initialize(self):
         with open(self.manifest_file, 'wb', 4096) as f:

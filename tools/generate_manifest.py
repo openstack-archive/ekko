@@ -21,16 +21,10 @@ import argparse
 import os
 import sys
 
-sys.path.insert(0, '/root/ekko/')
-from ekko.manifest import driver as manifest_driver
+from ekko.manifest import drivers as manifest_driver
 from ekko.manifest import structure as manifest_structure
 from six.moves import range
-
-
-DRIVERS = {
-    'osdk': 'osdk.OSDKDriver',
-    'sqlite': 'sqlite.SQLiteDriver'
-}
+from stevedore import driver
 
 
 def parse_args():
@@ -68,8 +62,12 @@ def main():
         print('manifest exists; exiting')
         return
 
-    manifest = manifest_driver.load_manifest_driver(args.manifest,
-                                                    DRIVERS[args.driver])
+    manifest = driver.DriverManager(
+        namespace='ekko.manifest.drivers',
+        name=args.driver,
+        invoke_on_load=True,
+        invoke_args=[args.manifest]
+    ).driver
 
     size_of_disk = args.backupsize * 1024**3  # Convert GB to B
     num_of_sectors = int(size_of_disk / 512)
