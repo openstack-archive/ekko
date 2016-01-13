@@ -13,35 +13,53 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from oslo_utils import importutils
+import abc
+
+import six
 
 
-def load_manifest_driver(manifest_location, manifest_driver=None):
-    if not manifest_driver:
-        manifest_driver = 'sqlite.SQLiteDriver'
+@six.add_metaclass(abc.ABCMeta)
+class BaseManifest(object):
+    """Base class for Manifest drivers
 
-    return importutils.import_object_ns('ekko.manifest',
-                                        manifest_driver,
-                                        manifest_location)
-
-
-class ManifestDriver(object):
-    """Base class for manifest drivers
-
+    :params manifest_file: File location for manifest
     """
 
     def __init__(self, manifest_file):
         self.conn = None
         self.manifest_file = manifest_file
 
+    @abc.abstractmethod
     def get_metadata(self):
+        """Get segments from manifest
+
+        :returns: An object of class manifest.structure.Metadata
+        """
         raise NotImplementedError()
 
+    @abc.abstractmethod
     def get_segments(self):
+        """Get segments from manifest
+
+        :returns: A generator of with objects of class
+          manifest.structure.Segment
+        """
         raise NotImplementedError()
 
+    @abc.abstractmethod
     def put_metadata(self, metadata):
+        """Puts given metadata into manifest
+
+        :params metadata: An object of class manifest.structure.Metadata
+        """
         raise NotImplementedError()
 
+    @abc.abstractmethod
     def put_segments(self, segments, metadata):
+        """Puts given segment information into manifest
+
+        :params segments: An interable with objects of class
+          manifest.structure.Segment
+        :params metadata: An object of class manifest.structure.Metadata
+        """
         raise NotImplementedError()
