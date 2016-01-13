@@ -17,11 +17,11 @@ from contextlib import closing
 from contextlib import contextmanager
 import sqlite3
 
-from ekko.manifest import driver
+from ekko.manifest import drivers
 from ekko.manifest import structure
 
 
-class SQLiteDriver(driver.ManifestDriver):
+class SQLiteManifest(drivers.BaseManifest):
 
     def initialize(self):
         with self.get_conn() as conn:
