@@ -48,7 +48,7 @@ class OSDKManifest(drivers.BaseManifest):
                 '<2IQ24s',
                 metadata.incremental,
                 metadata.segment_size,
-                metadata.sectors,
+                metadata.size_of_disk,
                 metadata.timestamp
             ))
             for backupset in metadata.backupsets:

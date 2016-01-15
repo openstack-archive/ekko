@@ -18,37 +18,20 @@
 
 
 import argparse
+import binascii
 import os
 import sys
 
-from ekko.manifest import structure as manifest_structure
-from six.moves import range
 from stevedore import driver
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Backup Block Device')
-    parser.add_argument('--backupsize', required=True, type=int,
-                        help='Size of backup for manifest gen (size in GB)')
     parser.add_argument('--manifest', required=True,
                         help='manifest file')
-    parser.add_argument('--cbt', required=False,
-                        help='change block tracking info')
     parser.add_argument('--driver', required=False, default='sqlite',
                         choices=['osdk', 'sqlite'], help='manifest driver')
     return parser.parse_args()
-
-
-def read_segments(segments, metadata):
-    for segment in segments:
-        yield manifest_structure.Segment(
-            metadata.backupset_id,
-            metadata.incremental,
-            segment,
-            0,
-            0,
-            os.urandom(20)
-        )
 
 
 def check_manifest(manifest_file):
@@ -57,10 +40,6 @@ def check_manifest(manifest_file):
 
 def main():
     args = parse_args()
-    if check_manifest(args.manifest):
-        print('manifest exists; exiting')
-        return
-
     manifest = driver.DriverManager(
         namespace='ekko.manifest.drivers',
         name=args.driver,
@@ -68,17 +47,8 @@ def main():
         invoke_args=[args.manifest]
     ).driver
 
-    size_of_disk = args.backupsize * 1024**3  # Convert GB to B
-    incremental = 0
-    metadata = manifest_structure.Metadata(incremental, size_of_disk)
-
-    manifest.initialize()
-    manifest.put_metadata(metadata)
-
-    num_of_segments = int(size_of_disk / metadata.segment_size)
-    segments = read_segments(range(0, num_of_segments - 1), metadata)
-
-    manifest.put_segments(segments, metadata)
+    for segment in manifest.get_segments(manifest.get_metadata()):
+        print(binascii.b2a_hex(segment.segment_hash))
 
 if __name__ == '__main__':
     sys.exit(main())
