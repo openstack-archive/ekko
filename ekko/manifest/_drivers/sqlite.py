@@ -69,19 +69,26 @@ class SQLiteManifest(drivers.BaseManifest):
 
         return structure.Metadata(
             incremental=metadata['incremental'],
-            sectors=metadata['sectors'],
+            size_of_disk=metadata['size_of_disk'],
             segment_size=metadata['segment_size'],
             timestamp=metadata['timestamp'],
             backupset_id=backupsets[-1],
             backupsets=backupsets
         )
 
-    def get_segments(self):
+    def get_segments(self, metadata):
         with self.get_conn() as conn:
             with closing(conn.cursor()) as cur:
                 cur.execute("SELECT * FROM segments")
                 for result in cur:
-                    yield result
+                    yield structure.Segment(
+                        backupset_id=metadata.backupsets[result[5]],
+                        incremental=result[0],
+                        segment=result[1],
+                        compression=result[2],
+                        encryption=result[3],
+                        segment_hash=str(result[4])
+                    )
 
     def put_segments(self, segments, metadata):
         with self.get_conn() as conn:
@@ -108,7 +115,7 @@ class SQLiteManifest(drivers.BaseManifest):
                     [
                         ('incremental', metadata.incremental),
                         ('segment_size', metadata.segment_size),
-                        ('sectors', metadata.sectors),
+                        ('size_of_disk', metadata.size_of_disk),
                         ('timestamp', metadata.timestamp)
                     ]
                 )
