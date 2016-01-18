@@ -18,10 +18,10 @@ from uuid import uuid4 as uuid
 
 class Metadata(object):
 
-    def __init__(self, incremental, sectors, segment_size=None,
+    def __init__(self, incremental, size_of_disk, segment_size=None,
                  timestamp=None, backupsets=None, backupset_id=None):
         self.timestamp = timestamp if timestamp else time.time()
-        self.sectors = sectors
+        self.size_of_disk = size_of_disk
         self.incremental = incremental
         self.segment_size = 4 * 1024 ** 2  # 4MiB
         self.backupset_id = backupset_id if backupset_id else uuid().bytes
