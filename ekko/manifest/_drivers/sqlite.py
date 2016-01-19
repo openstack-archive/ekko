@@ -35,14 +35,26 @@ class SQLiteManifest(drivers.BaseManifest):
                         id INTEGER PRIMARY KEY,
                         backupset_id BLOB
                     );
+                    CREATE TABLE compression (
+                        id INTEGER PRIMARY KEY,
+                        name TEXT,
+                        namespace TEXT
+                    );
+                    CREATE TABLE encryption (
+                        id INTEGER PRIMARY KEY,
+                        name TEXT,
+                        namespace TEXT
+                    );
                     CREATE TABLE segments (
+                        backupset_id INTEGER,
                         incremental INTEGER,
                         segment INTEGER PRIMARY KEY,
-                        compression TINYINT,
-                        encryption TINYINT,
+                        compression INTEGER,
+                        encryption INTEGER,
                         segment_hash BLOB,
-                        backupset_id INTEGER,
-                        FOREIGN KEY(backupset_id) REFERENCES backupsets(id)
+                        FOREIGN KEY(backupset_id) REFERENCES backupsets(id),
+                        FOREIGN KEY(compression) REFERENCES compression(id),
+                        FOREIGN KEY(encryption) REFERENCES encryption(id)
                     );
                 """)
             conn.commit()
