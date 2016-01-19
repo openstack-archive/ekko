@@ -22,16 +22,15 @@ from ekko.storage import drivers
 class LocalStorage(drivers.BaseStorage):
 
     def put_data(self, data_segment):
-        data = data_segment[0]
         segment = data_segment[1]
+        data = self.wrap_data(data_segment[0], segment)
+
         file_path = os.path.join(
             self.storage_location,
             str(uuid.UUID(bytes=segment.backupset_id)),
             str(segment.incremental)
         )
-
         mkpath(file_path)
-
         file_output = os.path.join(
             file_path,
             str(segment.segment)
