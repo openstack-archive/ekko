@@ -15,6 +15,7 @@
 import abc
 
 import six
+from stevedore import driver
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -37,3 +38,37 @@ class BaseStorage(object):
         :returns: A generator with the segment objects
         """
         raise NotImplementedError()
+
+    @staticmethod
+    def unwrap_data(data, segment):
+        # NOTE(SamYaple): Unimplemented selection of compression/encryption
+        compression = driver.DriverManager(
+            namespace='ekko.storage.compression_drivers',
+            name='zlib',
+            invoke_on_load=True
+        ).driver
+
+        encryption = driver.DriverManager(
+            namespace='ekko.storage.encryption_drivers',
+            name='noop',
+            invoke_on_load=True
+        ).driver
+
+        return encryption.decrypt(compression.uncompress(data))
+
+    @staticmethod
+    def wrap_data(data, segment):
+        # NOTE(SamYaple): Unimplemented selection of compression/encryption
+        compression = driver.DriverManager(
+            namespace='ekko.storage.compression_drivers',
+            name='zlib',
+            invoke_on_load=True
+        ).driver
+
+        encryption = driver.DriverManager(
+            namespace='ekko.storage.encryption_drivers',
+            name='noop',
+            invoke_on_load=True
+        ).driver
+
+        return encryption.encrypt(compression.compress(data))

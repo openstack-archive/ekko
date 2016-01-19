@@ -72,8 +72,8 @@ def read_segments(segments, metadata, backend):
             metadata.backupset_id,
             metadata.incremental,
             start / size,
-            0,
-            0,
+            ('ekko.storage.compression_drivers', 'zlib'),
+            ('ekko.storage.encryption_drivers', 'noop'),
             sha1(data).digest()
         )
 
