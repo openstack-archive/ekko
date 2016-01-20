@@ -33,15 +33,15 @@ class SQLiteManifest(drivers.BaseManifest):
                     );
                     CREATE TABLE backupsets (
                         id INTEGER PRIMARY KEY,
-                        backupset_id BLOB
+                        backupset_id TEXT
                     );
                     CREATE TABLE segments (
+                        backupset_id INTEGER,
                         incremental INTEGER,
                         segment INTEGER PRIMARY KEY,
                         compression TINYINT,
                         encryption TINYINT,
                         segment_hash BLOB,
-                        backupset_id INTEGER,
                         FOREIGN KEY(backupset_id) REFERENCES backupsets(id)
                     );
                 """)
@@ -82,12 +82,12 @@ class SQLiteManifest(drivers.BaseManifest):
                 cur.execute("SELECT * FROM segments")
                 for result in cur:
                     yield structure.Segment(
-                        backupset_id=metadata.backupsets[result[5]],
-                        incremental=result[0],
-                        segment=result[1],
-                        compression=result[2],
-                        encryption=result[3],
-                        segment_hash=str(result[4])
+                        backupset_id=metadata.backupsets[result[0]],
+                        incremental=result[1],
+                        segment=result[2],
+                        compression=result[3],
+                        encryption=result[4],
+                        segment_hash=str(result[5])
                     )
 
     def put_segments(self, segments, metadata):
@@ -97,12 +97,12 @@ class SQLiteManifest(drivers.BaseManifest):
                     cur.execute(
                         "INSERT INTO segments VALUES (?, ?, ?, ?, ?, ?)",
                         (
+                            metadata.backupsets.index(segment.backupset_id),
                             segment.incremental,
                             segment.segment,
                             segment.compression,
                             segment.encryption,
-                            buffer(segment.segment_hash),
-                            metadata.backupsets.index(segment.backupset_id)
+                            buffer(segment.segment_hash)
                         )
                     )
             conn.commit()

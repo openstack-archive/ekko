@@ -24,7 +24,7 @@ class Metadata(object):
         self.size_of_disk = size_of_disk
         self.incremental = incremental
         self.segment_size = 4 * 1024 ** 2  # 4MiB
-        self.backupset_id = backupset_id if backupset_id else uuid().bytes
+        self.backupset_id = backupset_id if backupset_id else str(uuid())
         self.backupsets = backupsets if backupsets else [self.backupset_id]
 
 

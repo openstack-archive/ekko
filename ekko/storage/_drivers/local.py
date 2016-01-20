@@ -27,7 +27,7 @@ class LocalStorage(drivers.BaseStorage):
 
         file_path = os.path.join(
             self.storage_location,
-            str(uuid.UUID(bytes=segment.backupset_id)),
+            segment.backupset_id,
             str(segment.incremental)
         )
         mkpath(file_path)
