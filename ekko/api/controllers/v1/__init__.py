@@ -18,6 +18,7 @@ from webob import exc
 from wsme import types as wtypes
 
 from ekko.api.controllers import base
+from ekko.api.controllers.v1 import images
 from ekko.api.controllers.v1 import versions
 from ekko.api import expose
 
@@ -67,6 +68,8 @@ class V1(base.APIBase):
 
 class Controller(rest.RestController):
     """Version 1 API controller root."""
+
+    images = images.ImagesController()
 
     @expose.expose(V1)
     def get(self):
