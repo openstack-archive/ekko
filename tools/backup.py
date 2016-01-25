@@ -38,6 +38,9 @@ def parse_args():
                         help='change block tracking info')
     parser.add_argument('--backend', required=False, default='raw',
                         choices=['raw'], help='backend driver')
+    parser.add_argument('--storage', required=False, default='local',
+                        choices=['local'], help='storage driver')
+    parser.add_argument('--location', required=True, help='storage path')
     parser.add_argument('--driver', required=False, default='sqlite',
                         choices=['osdk', 'sqlite'], help='manifest driver')
     return parser.parse_args()
@@ -65,7 +68,7 @@ def read_segments(segments, metadata, backend):
     for start, data in backend.get_data(reads):
         if data == zero_blob:
             continue
-        yield manifest_structure.Segment(
+        yield data, manifest_structure.Segment(
             metadata.backupset_id,
             metadata.incremental,
             start / size,
@@ -92,14 +95,21 @@ def main():
         invoke_args=[args.manifest]
     ).driver
 
-    backend = driver.DriverManager(
+    disk_backend = driver.DriverManager(
         namespace='ekko.backup.backend',
         name=args.backend,
         invoke_on_load=True,
         invoke_args=[args.backup]
     ).driver
 
-    size_of_disk = backend.get_size()
+    storage = driver.DriverManager(
+        namespace='ekko.storage.drivers',
+        name=args.storage,
+        invoke_on_load=True,
+        invoke_args=[args.location]
+    ).driver
+
+    size_of_disk = disk_backend.get_size()
     incremental = 0
     metadata = manifest_structure.Metadata(incremental, size_of_disk)
 
@@ -108,7 +118,11 @@ def main():
 
     segments_list = list(range(0, int(math.ceil(
         float(size_of_disk)/metadata.segment_size))))
-    segments = read_segments(segments_list, metadata, backend)
+    data_segments = read_segments(segments_list, metadata, disk_backend)
+
+    segments = [
+        storage.put_data(data_segment) for data_segment in data_segments
+    ]
 
     manifest.put_segments(segments, metadata)
 
