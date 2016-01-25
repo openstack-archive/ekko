@@ -1,3 +1,4 @@
+#
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
 #    a copy of the License at
@@ -10,14 +11,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from ekko.api.middleware import auth_token
+from ekko.api.middleware import parsable_error
 
-from oslotest import base
 
+ParsableErrorMiddleware = parsable_error.ParsableErrorMiddleware
+AuthTokenMiddleware = auth_token.AuthTokenMiddleware
 
-class NoopTest(base.BaseTestCase):
-
-    def setUp(self):
-        super(NoopTest, self).setUp()
-
-    def test_noop(self):
-        self.assertTrue(True)
+__all__ = (ParsableErrorMiddleware,
+           AuthTokenMiddleware)
