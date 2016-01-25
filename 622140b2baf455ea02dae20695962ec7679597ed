@@ -1,0 +1,9 @@
+Code-Review+2: Paul Bourke <paul.bourke@oracle.com>
+Code-Review+2: Sam Yaple <sam@yaple.net>
+Workflow+1: Sam Yaple <sam@yaple.net>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 25 Jan 2016 15:19:26 +0000
+Reviewed-on: https://review.openstack.org/269879
+Project: openstack/ekko
+Branch: refs/heads/master
