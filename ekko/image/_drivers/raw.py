@@ -12,18 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ekko.backup import backend
+from ekko.image import drivers
 
 
-class RawBackup(backend.BaseBackup):
+class RawImage(drivers.BaseImage):
 
     def get_data(self, reads):
-        with open(self.backup_location, 'rb') as f:
+        with open(self.image_location, 'rb') as f:
             for start, size in reads:
                 f.seek(start, 0)
                 yield (start, f.read(size))
 
     def get_size(self):
-        with open(self.backup_location, 'rb') as f:
+        with open(self.image_location, 'rb') as f:
             f.seek(0, 2)
             return f.tell()

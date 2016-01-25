@@ -95,8 +95,8 @@ def main():
         invoke_args=[args.manifest]
     ).driver
 
-    disk_backend = driver.DriverManager(
-        namespace='ekko.backup.backend',
+    image = driver.DriverManager(
+        namespace='ekko.image.drivers',
         name=args.backend,
         invoke_on_load=True,
         invoke_args=[args.backup]
@@ -109,7 +109,7 @@ def main():
         invoke_args=[args.location]
     ).driver
 
-    size_of_disk = disk_backend.get_size()
+    size_of_disk = image.get_size()
     incremental = 0
     metadata = manifest_structure.Metadata(incremental, size_of_disk)
 
@@ -118,7 +118,7 @@ def main():
 
     segments_list = list(range(0, int(math.ceil(
         float(size_of_disk)/metadata.segment_size))))
-    data_segments = read_segments(segments_list, metadata, disk_backend)
+    data_segments = read_segments(segments_list, metadata, image)
 
     segments = [
         storage.put_data(data_segment) for data_segment in data_segments

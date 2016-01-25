@@ -18,14 +18,14 @@ import six
 
 
 @six.add_metaclass(abc.ABCMeta)
-class BaseBackup(object):
-    """Base class for Backup drivers
+class BaseImage(object):
+    """Base class for Image drivers
 
-    :params backup_location: Location of device or file to backup
+    :params image_location: Location of device or file to image
     """
 
-    def __init__(self, backup_location):
-        self.backup_location = backup_location
+    def __init__(self, image_location):
+        self.image_location = image_location
 
     @abc.abstractmethod
     def get_data(self, reads):
