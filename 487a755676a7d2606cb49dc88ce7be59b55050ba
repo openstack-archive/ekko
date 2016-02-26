@@ -1,0 +1,9 @@
+Code-Review+2: Michal Rostecki <mrostecki@mirantis.com>
+Code-Review+2: Paul Bourke <paul.bourke@oracle.com>
+Workflow+1: Paul Bourke <paul.bourke@oracle.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 26 Feb 2016 10:05:51 +0000
+Reviewed-on: https://review.openstack.org/285020
+Project: openstack/ekko
+Branch: refs/heads/master
